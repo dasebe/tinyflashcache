@@ -4,8 +4,14 @@
 #include "caches/lru_variants.h"
 #include "caches/gd_variants.h"
 #include "request.h"
+#include <iostream>
+#include <functional>
+#include <string>
+#include <queue>
 
 using namespace std;
+
+    
 
 int main (int argc, char* argv[])
 {
@@ -44,8 +50,12 @@ int main (int argc, char* argv[])
   }
 
   ifstream infile;
-  long long reqs = 0, hits = 0;
-  long long t, id, size;
+  uint64_t reqs = 0, hits = 0, t;
+  int64_t size, id;
+
+  size_t hh;
+
+  std::hash<std::string> hash;
 
   cerr << "running..." << endl;
 
@@ -54,6 +64,9 @@ int main (int argc, char* argv[])
   while (infile >> t >> id >> size)
     {
         reqs++;
+
+        hh=hash(std::to_string(id));
+        cerr << id << " " << hh << " " << hh % 10 <<  "\n";
         
         req->reinit(id,size);
         if(webcache->lookup(req)) {
