@@ -8,15 +8,14 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include <cmath>
+#include <math.h>
 
 using namespace std;
 
 typedef std::pair<int64_t, int64_t> IdSizePair;
-typedef std::pair<uint64_t, std::vector<IdSizePair>*> CDFPair;
+typedef std::pair<long double, std::vector<IdSizePair>*> CDFPair;
 
 std::mt19937_64 rd_gen;
-std::random_device rd;
 
 bool CDFCompare(const CDFPair& a, const CDFPair& b)
 {
@@ -67,35 +66,36 @@ int main (int argc, char* argv[])
     
 
     // init
-    rd_gen.seed(rd());
-    vector<int64_t> base_sizes{ 10, 100, 1000 };
+    rd_gen.seed(1);
+    vector<int64_t> base_sizes{16,32,64,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,400,700,900,512,1024,800,1400,1500,2048,4096};
     std::uniform_int_distribution<uint64_t> size_dist(0,base_sizes.size()-1);
     std::vector<CDFPair> _popularityCdf; // CDF of popularity distribution, scaled by totalCount (i.e., range [0,totalCount])
-    std::uniform_int_distribution<uint64_t> _distribution;
-    std::unordered_map<int64_t, std::vector<IdSizePair>*> data;
+    std::unordered_map<long double, std::vector<IdSizePair>*> data;
     int64_t sampled_size;
-    long double rate = 2e9;
+    long double rate = 1e100L;
     cerr << "done init\n";
     // create high-level distribution datastructures
     for(int64_t i=0; i<ObjCount; i++) {
-        rate /= 1.74;
+        rate /= 1.2;
         sampled_size=base_sizes[size_dist(rd_gen)];
-        std::vector<IdSizePair>*& idSizes = data[round(rate)];
+        std::vector<IdSizePair>*& idSizes = data[roundl(rate)+1.0L];
         if (idSizes == NULL) {
             idSizes = new std::vector<IdSizePair>();
         }
         idSizes->emplace_back(i, sampled_size);
+        // cerr << i << " " << rate << " " << round(rate)+1 << " " << sampled_size << "\n";
     }
     cerr << "done dists\n";
     // calculate popularity CDF
-    uint64_t totalCount = 0;
+    long double totalCount = 0;
     for (auto &it : data) {
-        int64_t count = it.first;
+        long double count = it.first;
         std::vector<IdSizePair>* idSizes = it.second;
         totalCount += count * idSizes->size();
+        //cerr << "calc " << count << " " << (*idSizes)[0].first << " " << totalCount << "\n";
         _popularityCdf.emplace_back(totalCount, idSizes);
     }
-    _distribution = std::uniform_int_distribution<uint64_t>(0, totalCount - 1);
+    std::uniform_real_distribution<long double> _distribution(0, totalCount - 1);
     cerr << "done cdf\n";
 
     // running the simulator
@@ -107,22 +107,26 @@ int main (int argc, char* argv[])
 
     for(int64_t i=0; i<TraceLength; i++) {
         // sample
-        uint64_t r = _distribution(rd_gen);
+        long double r = _distribution(rd_gen);
         const std::vector<CDFPair>::iterator it = std::upper_bound(_popularityCdf.begin(), _popularityCdf.end(), CDFPair(r, NULL), CDFCompare);
         const std::vector<IdSizePair>& idSizes = *(it->second);
         size_t r2 = std::uniform_int_distribution<size_t>(0, idSizes.size() - 1)(rd_gen);
         const IdSizePair& idSize = idSizes[r2];
         req->reinit(idSize.first,idSize.second);
+        //        cerr << r << " " << r2 << " " << idSize.first << " " << idSize.second << "\n";
 
         // simulate
         reqs++;
         hh=hash(std::to_string(idSize.first));
         bucket_idx = hh % bucket_count;
-        //cerr << id << " " << hh << " " << hh % bucket_count <<  "\n";
+        //cerr << idSize.first << ",";
         if(caches[bucket_idx]->lookup(req)) {
             hits++;
         } else {
             caches[bucket_idx]->admit(req);
+        }
+        if(reqs % 100000 == 0) {
+            cerr << double(hits)/reqs << "\n";
         }
     }
 
