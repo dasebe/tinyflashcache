@@ -67,7 +67,18 @@ int main (int argc, char* argv[])
 
     // init
     rd_gen.seed(1);
-    vector<int64_t> base_sizes{16,32,64,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,400,700,900,512,1024,800,1400,1500,2048,4096};
+    // scan files from file
+    ifstream infile;
+    infile.open("size.dist");
+    int64_t tmp;
+    vector<int64_t> base_sizes;
+    while (infile >> tmp) {
+        if(tmp>0 && tmp<4096) {
+            base_sizes.push_back(tmp);
+        }
+    }
+    infile.close();
+    //    vector<int64_t> base_sizes{16,32,64,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,400,700,900,512,1024,800,1400,1500,2048,4096};
     std::uniform_int_distribution<uint64_t> size_dist(0,base_sizes.size()-1);
     std::vector<CDFPair> _popularityCdf; // CDF of popularity distribution, scaled by totalCount (i.e., range [0,totalCount])
     std::unordered_map<long double, std::vector<IdSizePair>*> data;
