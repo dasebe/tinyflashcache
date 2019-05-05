@@ -78,7 +78,9 @@ int main (int argc, char* argv[])
         }
     }
     infile.close();
-    //    vector<int64_t> base_sizes{16,32,64,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,400,700,900,512,1024,800,1400,1500,2048,4096};
+    if(base_sizes.size()==0) {
+        base_sizes = vector<int64_t>({16,32,64,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,100,128,200,256,300,400,700,900,512,1024,800,1400,1500,2048,4096});
+    }
     std::uniform_int_distribution<uint64_t> size_dist(0,base_sizes.size()-1);
     std::vector<CDFPair> _popularityCdf; // CDF of popularity distribution, scaled by totalCount (i.e., range [0,totalCount])
     std::unordered_map<long double, std::vector<IdSizePair>*> data;
@@ -121,6 +123,9 @@ int main (int argc, char* argv[])
     std::hash<std::string> hash;
     SimpleRequest* req = new SimpleRequest(0, 0);
     cerr << "running..." << endl;
+    // balls and bins counters
+    std::vector<int64_t > ballsbins(bucket_count);
+    std::vector<int64_t > ballsbins_misses(bucket_count);
 
     for(int64_t i=0; i<TraceLength; i++) {
         // sample
@@ -129,19 +134,22 @@ int main (int argc, char* argv[])
         const std::vector<IdSizePair>& idSizes = *(it->second);
         size_t r2 = std::uniform_int_distribution<size_t>(0, idSizes.size() - 1)(rd_gen);
         const IdSizePair& idSize = idSizes[r2];
-        req->reinit(idSize.first,idSize.second);
-        //        cerr << r << " " << r2 << " " << idSize.first << " " << idSize.second << "\n";
-
+        req->reinit(idSize.first,idSize.second); // id, size
         // simulate
         reqs++;
         hh=hash(std::to_string(idSize.first));
         bucket_idx = hh % bucket_count;
-        //cerr << idSize.first << ",";
+        // ballsandbins
+        ballsbins[bucket_idx]+=idSize.second;
+        // caching
         if(caches[bucket_idx]->lookup(req)) {
             hits++;
         } else {
             caches[bucket_idx]->admit(req);
+            // ballsandbins (only cache misses)
+            ballsbins_misses[bucket_idx]+=idSize.second;
         }
+        // output
         if(reqs % 1000000 == 0) {
             cerr << double(hits)/reqs << "\n";
         }
@@ -149,10 +157,41 @@ int main (int argc, char* argv[])
 
     delete req;
 
+    // stats gathering
+    int64_t maxballs=0, minballs, sumballs=0;
+    int64_t maxballs_misses=0, minballs_misses, sumballs_misses=0;
+    for(uint64_t i=0; i<bucket_count; i++) {
+        if(ballsbins[i]>maxballs) {
+            maxballs=ballsbins[i];
+        }
+        if(ballsbins_misses[i]>maxballs_misses) {
+            maxballs_misses=ballsbins_misses[i];
+        }
+        sumballs+=ballsbins[i];
+        sumballs_misses+=ballsbins_misses[i];
+    }
+    minballs=maxballs;
+    minballs_misses=maxballs_misses;
+    for(uint64_t i=0; i<bucket_count; i++) {
+        if(ballsbins[i]<minballs) {
+            minballs=ballsbins[i];
+        }
+        if(ballsbins_misses[i]<minballs_misses) {
+            minballs_misses=ballsbins_misses[i];
+        }    
+    }
+
     cout << cacheType << " " << ObjCount << " "
          << bucket_count << " " << bucket_size << " "
          << paramSummary << " "
-         << double(hits)/reqs << endl;
+         << double(hits)/reqs << " " 
+         << maxballs << " "
+         << minballs << " "
+         << double(sumballs)/caches.size() << " "
+         << maxballs_misses << " "
+         << minballs_misses << " "
+         << double(sumballs_misses)/caches.size() << " "
+         << endl;
     
     return 0;
 }
