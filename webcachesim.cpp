@@ -72,18 +72,24 @@ int main (int argc, char* argv[])
     std::vector<CDFPair> _popularityCdf; // CDF of popularity distribution, scaled by totalCount (i.e., range [0,totalCount])
     std::unordered_map<long double, std::vector<IdSizePair>*> data;
     int64_t sampled_size;
-    long double rate = 1e100L;
+    long double rate = 1e10L;
+    uint64_t div_factor = 1;
     cerr << "done init\n";
     // create high-level distribution datastructures
-    for(int64_t i=0; i<ObjCount; i++) {
-        rate /= 1.2;
-        sampled_size=base_sizes[size_dist(rd_gen)];
+    for(int64_t i=0; i<ObjCount;) {
+        rate /= 1.5;
         std::vector<IdSizePair>*& idSizes = data[roundl(rate)+1.0L];
         if (idSizes == NULL) {
             idSizes = new std::vector<IdSizePair>();
         }
-        idSizes->emplace_back(i, sampled_size);
-        // cerr << i << " " << rate << " " << round(rate)+1 << " " << sampled_size << "\n";
+        // insert multiple ones at this rate
+        for(uint64_t j=0; j<div_factor; j++) {
+            sampled_size=base_sizes[size_dist(rd_gen)];
+            idSizes->emplace_back(i, sampled_size);
+            i++;
+        }
+        //cerr << i << " " << round(rate)+1 << " " << sampled_size << "\n";
+        div_factor *= 2;
     }
     cerr << "done dists\n";
     // calculate popularity CDF
@@ -125,7 +131,7 @@ int main (int argc, char* argv[])
         } else {
             caches[bucket_idx]->admit(req);
         }
-        if(reqs % 100000 == 0) {
+        if(reqs % 1000000 == 0) {
             cerr << double(hits)/reqs << "\n";
         }
     }
