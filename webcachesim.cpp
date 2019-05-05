@@ -149,8 +149,10 @@ int main (int argc, char* argv[])
 
     delete req;
 
-    cout << cacheType << " " << bucket_count << " " << bucket_size << " " << paramSummary << " "
+    cout << cacheType << " " << ObjCount << " "
+         << bucket_count << " " << bucket_size << " "
+         << paramSummary << " "
          << double(hits)/reqs << endl;
-
+    
     return 0;
 }
