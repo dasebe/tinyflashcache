@@ -5,6 +5,13 @@
 #include <string>
 #include <vector>
 
+/* sampling object id and object size from a Zipf-like distribution
+ (aka the independent reference model (IRM))
+
+ Multiple objects with similar rates are grouped together for more efficient sampling.
+ Two level sampling process: first skewed sample to select the rate, then uniform sample within rate to select object.
+*/
+
 
 class ZipfRequests {
 
