@@ -25,7 +25,7 @@ pl <- ggplot(tmp,aes(totcs,V5,color=pol,shape=pol))+
     geom_line()+
     scale_color_brewer("",palette="Set1")+
     scale_shape_discrete("")+
-    scale_x_continuous("Cache Size",expand=c(0,0))+
+    scale_x_continuous("Cache Size [GB]",expand=c(0,0),breaks=c(2^31,2^32,2^33,2^34,2^35),labels=c(2^c(1:5)))+
     scale_y_continuous("Miss Ratio",expand=c(0,0))+
     theme(legend.key.width = unit(0.4, "cm"),
           legend.key.height = unit(0.5, "cm"),
