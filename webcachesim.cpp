@@ -52,7 +52,7 @@ int main (int argc, char* argv[])
         hh=hash(std::to_string(req->getId()));
         bucket_idx = hh % bucketCount;
         // ballsandbins stats
-        ballsbins[bucket_idx]+=req->getId();
+        ballsbins[bucket_idx]+=req->getSize();
         // caching
         if(caches[bucket_idx]->lookup(req)) {
             hits++;
