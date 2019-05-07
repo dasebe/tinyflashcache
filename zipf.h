@@ -66,7 +66,7 @@ public:
                 idSizes->emplace_back(i, sampled_size);
                 i++;
             }
-            rate /= 1.5;  // reduce rate
+            rate /= 1.5;  // Zipf rate (alpha <1)
             div_factor *= 2;  // increase obj count at next rate
         }
 
