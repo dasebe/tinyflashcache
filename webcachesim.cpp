@@ -62,9 +62,9 @@ int main (int argc, char* argv[])
             ballsbins_misses[bucket_idx]+=req->getSize();
         }
         // progress output
-        if(reqs % 1000000 == 0) {
-            std::cerr << double(hits)/reqs << "\n";
-        }
+        // if(reqs % 1000000 == 0) {
+        //     std::cerr << double(hits)/reqs << "\n";
+        // }
     }
 
     delete req;
@@ -104,6 +104,8 @@ int main (int argc, char* argv[])
          << minballs_misses << " "
          << double(sumballs_misses)/caches.size() << " "
          << "\n";
+
+    zr.Summarize();
     
     return 0;
 }

@@ -23,6 +23,8 @@ private:
     std::uniform_real_distribution<long double> _distribution;
     std::vector<CDFPair> _popularityCdf; // CDF of popularity distribution, scaled by totalCount (i.e., range [0,totalCount])
 
+    std::unordered_map<int64_t, IdSizePair> stats;
+
     static bool CDFCompare(const CDFPair& a, const CDFPair& b)
     {
         return a.first < b.first;
@@ -90,5 +92,29 @@ public:
         size_t r2 = std::uniform_int_distribution<size_t>(0, idSizes.size() - 1)(rd_gen);
         const IdSizePair& idSize = idSizes[r2];
         req->reinit(idSize.first,idSize.second); // id, size
+        if(stats.count(idSize.first)>0) {
+            stats[idSize.first].second++;
+        } else {
+            stats[idSize.first].first = idSize.second;
+            stats[idSize.first].second = 1;
+        }
+    }
+
+    void Summarize() {
+        std::map<int64_t, IdSizePair> summary;
+        for(auto it: stats) {
+            summary[it.second.second] = IdSizePair(it.first, it.second.first);
+        }
+        //        int64_t top=10;
+        int64_t summed_bytes = 0;
+        int64_t idx = 0;
+        std::map<int64_t, IdSizePair>::reverse_iterator rit = summary.rbegin();
+        for (; rit!= summary.rend(); ++rit) {
+            summed_bytes += rit->second.second;
+            std::cerr << idx++ << " " << rit->first << " " << rit->second.first << " " << rit->second.second << " " << summed_bytes << "\n";
+            // if(--top <1 ) {
+            //     break;
+            // }
+        }
     }
 };
