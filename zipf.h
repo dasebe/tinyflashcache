@@ -72,7 +72,6 @@ public:
                 ratesum=0;
             } 
         }
-        std::cerr << "debug " << popDist.size() << " " << popDist[popDist.size()-1].size() << "\n";
         // std::cerr << "init " << objectId << " " << ratesum << "\n";
         // corresponding PNRGs
         popOuterRng = std::uniform_int_distribution<size_t>(0,popDist.size()-1);
