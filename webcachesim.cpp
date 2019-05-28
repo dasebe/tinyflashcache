@@ -44,20 +44,29 @@ int main (int argc, char* argv[])
 
     for(int64_t i=0; i<traceLength; i++) {
         zr.Sample(req);
-        reqs++;
+        if(i>traceLength/2) {
+            reqs++;
+        }
 
         // hash into bin
         hh=hash(std::to_string(req->getId()));
         bucket_idx = hh % bucketCount;
-        // ballsandbins stats
-        ballsbins[bucket_idx]+=req->getSize();
+
+        if(i>traceLength/2) {
+            // ballsandbins stats
+            ballsbins[bucket_idx]+=req->getSize();
+        }
         // caching
         if(caches[bucket_idx]->lookup(req)) {
-            hits++;
+            if(i>traceLength/2) {
+                hits++;
+            }
         } else {
             caches[bucket_idx]->admit(req);
-            // ballsandbins stats (for only cache misses)
-            ballsbins_misses[bucket_idx]+=req->getSize();
+            if(i>traceLength/2) {
+                // ballsandbins stats (for only cache misses)
+                ballsbins_misses[bucket_idx]+=req->getSize();
+            }
         }
         // progress output
         // if(reqs % 1000000 == 0) {
@@ -93,7 +102,6 @@ int main (int argc, char* argv[])
 
     std::cout << cacheType << " " << objCount << " "
          << bucketCount << " " << bucketSize << " "
-         << " " // old/unused output
          << double(hits)/reqs << " " 
          << maxballs << " "
          << minballs << " "
