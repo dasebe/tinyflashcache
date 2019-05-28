@@ -103,7 +103,7 @@ int main (int argc, char* argv[])
          << double(sumballs_misses)/caches.size() << " "
          << "\n";
 
-    zr.Summarize();
+    // zr.Summarize();
     
     return 0;
 }
