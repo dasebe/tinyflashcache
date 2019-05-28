@@ -10,19 +10,17 @@
 int main (int argc, char* argv[])
 {
     // output help if insufficient params
-    if(argc != 6) {
-        std::cerr << "webcachesim CacheType ObjCount TraceLength BucketCount BucketSize\n";
+    if(argc != 7) {
+        std::cerr << "webcachesim CacheType ObjCount ZipfAlpha TraceLength BucketCount BucketSize\n";
         return 1;
     }
-
-    // trace properties
+    // param parsing
     const std::string cacheType = argv[1];
     const int64_t objCount = std::stoull(argv[2]);
-    const int64_t traceLength = std::stoull(argv[3]);
-  
-    // configure cache size
-    const uint64_t bucketCount  = std::stoull(argv[4]);
-    const uint64_t bucketSize  = std::stoull(argv[5]);
+    const double zipfAlpha = std::stof(argv[3]);
+    const int64_t traceLength = std::stoull(argv[4]);
+    const uint64_t bucketCount  = std::stoull(argv[5]);
+    const uint64_t bucketSize  = std::stoull(argv[6]);
 
     // create buckets and their caches
     std::vector<std::unique_ptr<Cache> > caches;
@@ -32,7 +30,7 @@ int main (int argc, char* argv[])
     }
 
     // init zipf distribution
-    auto zr = ZipfRequests("size.dist",objCount);
+    auto zr = ZipfRequests("size.dist", objCount, zipfAlpha);
     
     // running the simulator
     uint64_t reqs = 0, hits = 0;
