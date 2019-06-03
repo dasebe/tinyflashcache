@@ -50,6 +50,7 @@ public:
         for(double i=0; i<segmentCount; i++) {
             cache.emplace(i/double(segmentCount),segment());
         }
+        LOG("flash init",segmentCount,blockSize,blockCount);
     }
 
     bool lookup(int64_t id) {
@@ -59,12 +60,15 @@ public:
             // hit
             index[id].accessCount++;
             index[id].lastAccess = time;
+            LOG("hit",id,time,index[id].accessCount);
             return true;
         }
+        LOG("miss",id,time,0);
         return false;
     }
 
     void fullSegment(segment & curSegment) {
+        LOG("fullSegment 1",curSegment.size(),blocksPerSegment,0);
         if(curSegment.size()<=blocksPerSegment) {
             std::cerr << "called full, but not full\n";
             return;
@@ -92,9 +96,11 @@ public:
             }
         }
         curSegment.pop();
+        LOG("fullSegment 2",0,0,0);
     }
 
     void checkFullBlocks() { // potentially buggy
+        LOG("checkFullBlocks 1",0,0,0);
         // from top to bottom
         for (auto rit = cache.rbegin(); rit!=cache.rend(); ++rit) {
             auto & curSegment = rit->second;
@@ -102,9 +108,11 @@ public:
                 fullSegment(curSegment);
             }
         }
+        LOG("checkFullBlocks 2",0,0,0);
     }
     
     void admit(int64_t id, int64_t size) {
+        LOG("admit 1",id,size,0);
         if(size>blockSize) {
             // don't admit too large objects
             std::cerr << "object size > block size!!\n";
@@ -127,6 +135,7 @@ public:
         index[id].accessCount = 1;
         // bring cache into good state
         checkFullBlocks();
+        LOG("admit 2",id,size,0);
     }
 };
 
