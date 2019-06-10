@@ -47,9 +47,18 @@ public:
           highestprio(0), lowestprio(0), time(0),
           writtenBytes(0), amplifiedBytes(0)
     {
-        for(double i=0; i<segmentCount; i++) {
-            cache.emplace(i/double(segmentCount),segment());
+        // mapping of priority to segment using upper bound on cache
+        for(double i=0; i<segmentCount-1; i++) {
+            cache.emplace(
+                          (i+1)/double(segmentCount), // initial priority steps
+                          segment({block()}) // single empty block in each segment
+                          );
         }
+        // terminal node: just above 1
+        cache.emplace(
+                      1.1,
+                      segment({block()})
+                      );
         LOG("flash init",segmentCount,blockSize,blockCount);
     }
 
@@ -75,15 +84,18 @@ public:
         }
         // evict single block, at front
         auto & evictBlock = curSegment.front();
+        LOG("fullSegment 2",evictBlock.ids.size(),curSegment.size(),0);
         // iterate over stored objects
         for(size_t i=0; i<evictBlock.ids.size(); i++) {
             const auto id = evictBlock.ids[i];
             const auto size = evictBlock.sizes[i];
             const auto lastAccess = index[id].lastAccess;
             const double prio = double(lastAccess-lowestprio) / double(highestprio-lowestprio);
+            //            LOG("fullSegment 3a",i,id,prio);
+            //            LOG("fullSegment 3b",lastAccess,lowestprio,highestprio);
             if(prio > 0.1) {
                 // readmit as prio > 10%
-                auto & moveToSegment = cache.lower_bound(prio)->second;
+                auto & moveToSegment = cache.upper_bound(prio)->second;
                 auto & moveToBlock = moveToSegment.back();
                 moveToBlock.ids.push_back(id);
                 moveToBlock.sizes.push_back(size);
@@ -118,25 +130,46 @@ public:
             std::cerr << "object size > block size!!\n";
             return;
         }
-        auto & curSegment = cache[1.0]; // admit to highest prio segment
-        auto & curBlock = curSegment.back();
-        if(curBlock.bytes+size>blockSize) {
-            // add a new block
-            curSegment.push(block());
-            curBlock = curSegment.back();
+        segment & curSegment = cache.upper_bound(1.0)->second; // admit to highest prio segment
+        LOG("admit 2",0,0,curSegment.size());
+        block * curBlock = NULL;
+        if(curSegment.size()==0) {
+            std::cerr << "error: initialization failed\n";
+        } else {
+            // current block exists
+            LOG("admit 3e",0,0,0);
+            curBlock = &curSegment.back();
         }
+        if(curBlock->bytes + size > blockSize) {
+            // object does not fit into current block
+            // -> add a new block
+            LOG("admit 3n",0,0,0);
+            curSegment.push(block());
+            curBlock = &curSegment.back();
+        }
+        LOG("admit 4",0,0,0);
         // process cache admission
-        curBlock.ids.push_back(id);
-        curBlock.sizes.push_back(size);
-        curBlock.bytes+=size;
+        curBlock->ids.push_back(id);
+        curBlock->sizes.push_back(size);
+        curBlock->bytes+=size;
         writtenBytes += size;
         index[id].size = size;
         index[id].lastAccess = time;
         index[id].accessCount = 1;
         // bring cache into good state
+        LOG("admit 5",0,0,0);
         checkFullBlocks();
-        LOG("admit 2",id,size,0);
+        LOG("admit 6",id,size,0);
     }
+
+    int64_t getWrittenBytes() {
+        return writtenBytes;
+    }
+
+    int64_t getAmplifiedBytes() {
+        return amplifiedBytes;
+    }
+    
 };
 
 
@@ -176,6 +209,15 @@ int main (int argc, char* argv[])
   }
 
   infile.close();
+
+  std::cout << path << " "
+            << cacheSize << " "
+            << segmentCount << " "
+            << blockSize << " "
+            << f.getWrittenBytes() << " "
+            << f.getAmplifiedBytes() << " "
+            << double(hits)/reqs << "\n";
+
   
   return 0;
 }
