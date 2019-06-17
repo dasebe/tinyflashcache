@@ -15,7 +15,7 @@ using namespace std;
 class flash {
     struct block {
         std::vector<int64_t> ids;
-        std::vector<int64_t> sizes;
+        std::vector<int64_t> sizes; // duplicate with index
         int64_t bytes;
     };
 
@@ -63,8 +63,7 @@ public:
     }
 
     bool lookup(int64_t id) {
-        time++;
-        highestprio = time;
+        highestprio = ++time; // update time and highestprio
         if(index.count(id)>0) {
             // hit
             index[id].accessCount++;
@@ -85,6 +84,8 @@ public:
         // evict single block, at front
         auto & evictBlock = curSegment.front();
         LOG("fullSegment 2",evictBlock.ids.size(),curSegment.size(),0);
+        // store evicted prio so that lowestprio is constant while evicting
+        int64_t evictedPrio = lowestprio;
         // iterate over stored objects
         for(size_t i=0; i<evictBlock.ids.size(); i++) {
             const auto id = evictBlock.ids[i];
@@ -103,24 +104,34 @@ public:
                 amplifiedBytes += size;
             } else {
                 // update lowest prior end
-                lowestprio = index[id].lastAccess; // TODO: fixme
+                if(index[id].lastAccess > evictedPrio) {
+                    evictedPrio = index[id].lastAccess; // TODO: fixme
+                }
                 index.erase(id);
             }
         }
+        // update lowestprio
+        lowestprio = evictedPrio;
         curSegment.pop();
         LOG("fullSegment 2",0,0,0);
     }
 
-    void checkFullBlocks() { // potentially buggy
-        LOG("checkFullBlocks 1",0,0,0);
-        // from top to bottom
-        for (auto rit = cache.rbegin(); rit!=cache.rend(); ++rit) {
-            auto & curSegment = rit->second;
-            if(curSegment.size()>blocksPerSegment) {
-                fullSegment(curSegment);
+    void checkRebalance() {
+        LOG("checkRebalance 1",0,0,0);
+        bool anyFullSegment;
+        do { // iterate until no full segments
+            anyFullSegment = false; // reset and beginning of round
+            // from top to bottom
+            for (auto rit = cache.rbegin(); rit!=cache.rend(); ++rit) {
+                auto & curSegment = rit->second;
+                if(curSegment.size()>blocksPerSegment) {
+                    fullSegment(curSegment);
+                    anyFullSegment = true;
+                }
             }
-        }
-        LOG("checkFullBlocks 2",0,0,0);
+            LOG("checkRebalance i",anyFullSegment,0,0);
+        } while(anyFullSegment);
+        LOG("checkRebalance 2",0,0,0);
     }
     
     void admit(int64_t id, int64_t size) {
@@ -158,7 +169,7 @@ public:
         index[id].accessCount = 1;
         // bring cache into good state
         LOG("admit 5",0,0,0);
-        checkFullBlocks();
+        checkRebalance();
         LOG("admit 6",id,size,0);
     }
 
@@ -206,6 +217,13 @@ int main (int argc, char* argv[])
           f.admit(id, size);
       }
       reqs++;
+
+      if(reqs % 10000 == 0) {
+          std::cout << reqs << " "
+                    << hits/double(reqs) << " "
+                    << f.getAmplifiedBytes()/double(f.getWrittenBytes())
+                    << "\n";
+      }
   }
 
   infile.close();
