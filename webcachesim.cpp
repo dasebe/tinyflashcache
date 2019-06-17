@@ -180,6 +180,12 @@ public:
     int64_t getAmplifiedBytes() {
         return amplifiedBytes;
     }
+
+  void printSegmentStats() {
+    for(auto & it: cache) {
+      std::cerr << it.first << " " << it.second.size() << "\n";
+    }
+  }
     
 };
 
@@ -203,12 +209,12 @@ int main (int argc, char* argv[])
   
   ifstream infile;
   uint64_t reqs = 0, hits = 0;
-  int64_t t, id, size;
+  int64_t t, id, size, type;
 
   cerr << "running..." << endl;
 
   infile.open(path);
-  while (infile >> t >> id >> size)
+  while (infile >> t >> id >> size >> type)
   {
       if(f.lookup(id)) {
           // hit
@@ -235,7 +241,7 @@ int main (int argc, char* argv[])
             << f.getWrittenBytes() << " "
             << f.getAmplifiedBytes() << " "
             << double(hits)/reqs << "\n";
-
+  f.printSegmentStats();
   
   return 0;
 }
