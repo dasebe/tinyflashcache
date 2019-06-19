@@ -9,7 +9,8 @@ void checkEntryIdx(Partitions & p, double val) {
 
 int main (int argc, char* argv[])
 {
-    auto p = Partitions(2);
+    cout << "**startup**\n";
+    auto p = Partitions(2,1000);
     cout << "**initial**\n";
     cout << "idx 0 co " << p.getNthCutoff(0) << "\n";
     cout << "idx 1 co " << p.getNthCutoff(1) << "\n";
@@ -52,5 +53,11 @@ int main (int argc, char* argv[])
     checkEntryIdx(p,140);
     checkEntryIdx(p,141);
     checkEntryIdx(p,23095358235);
+    cout << "is bottom 4 " << p.isBottomPerc(4) << "\n";
+    cout << "is bottom 30 " << p.isBottomPerc(30) << "\n";
+    cout << "is bottom 40 " << p.isBottomPerc(40) << "\n";
+    cout << "is bottom 50 " << p.isBottomPerc(50) << "\n";
+    cout << "is bottom 100 " << p.isBottomPerc(100) << "\n";
+    cout << "is bottom 140 " << p.isBottomPerc(140) << "\n";
     return 0;
 }
