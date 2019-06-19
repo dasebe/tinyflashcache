@@ -46,11 +46,12 @@ public:
           blockCount(sblockCount), blocksPerSegment(blockCount / segmentCount),
           writtenBytes(0), amplifiedBytes(0)
     {
+        LOG("flash init 1",segmentCount,blockSize,blockCount);
         for(size_t i=0; i<segmentCount; i++) {
             cache.push_back(segment());
             cache[i].push(block());
         }
-        LOG("flash init",segmentCount,blockSize,blockCount);
+        LOG("flash init 2",segmentCount,blockSize,blockCount);
     }
 
     double calcPrio(size_t id) {
@@ -204,6 +205,9 @@ int main (int argc, char* argv[])
   const uint64_t cacheSize  = std::stoull(argv[2]);
   const uint64_t segmentCount  = std::stoull(argv[3]);
   const int64_t blockSize  = std::stoull(argv[4]);
+
+  cerr << "Flash segmentCount " << segmentCount << " blockSize " << blockSize
+       << " blockCount " << cacheSize / blockSize << "\n";
 
   auto f = flash(segmentCount, blockSize,
                  cacheSize / blockSize
