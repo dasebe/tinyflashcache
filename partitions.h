@@ -21,8 +21,10 @@ class Partitions {
 public:
     Partitions(size_t partCount, size_t rec_int)
         : reconfiguration_interval(rec_int),
-          reqs_to_next_reconfiguration(0)
+          reqs_to_next_reconfiguration(1)
     {
+        std::cerr << "Partitions " << partCount << " " << rec_int << "\n";
+        assert(partCount>0);
         for(size_t idx=0; idx<partCount-1; idx++) {
             const double cutoff = double(idx+1)/double(partCount);
             idxToCutoff[idx] = cutoff;
@@ -99,7 +101,9 @@ public:
         cutoffToIdx.clear();
         for(auto & c: idxToCutoff) {
             cutoffToIdx[c.second] = c.first;
+            std::cerr << "histreconf " << c.first << " " << c.second << "\n";
         }
         queue.clear();
+        reqs_to_next_reconfiguration = reconfiguration_interval;
     }
 };

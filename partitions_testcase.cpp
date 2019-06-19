@@ -21,6 +21,8 @@ int main (int argc, char* argv[])
     checkEntryIdx(p,1);
     checkEntryIdx(p,1.1);
     cout << "**added 10 elems**\n";
+    p.addEntry(40);
+    // should trigger reconf
     for(double i=40; i<140; i=i+10) {
         p.addEntry(i);
     }
@@ -38,7 +40,7 @@ int main (int argc, char* argv[])
     checkEntryIdx(p,140);
     checkEntryIdx(p,141);
     checkEntryIdx(p,23095358235);
-    p.reconfigure();
+    p.reconfigure(); // manual reconf
     cout << "idx 0 co " << p.getNthCutoff(0) << "\n";
     cout << "idx 1 co " << p.getNthCutoff(1) << "\n";
     checkEntryIdx(p,0);
