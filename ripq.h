@@ -1,6 +1,8 @@
 #include <queue>
 #include <unordered_map>
 #include <vector>
+#include "partitions.h"
+
 
 class flash {
     struct block {
